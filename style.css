@@ -1,0 +1,254 @@
+/* Write your CSS code here */
+#diy-container {
+  --blue: #00aaff;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #f43f5e;
+  --text-main: #f8fafc;
+  --text-muted: #64748b;
+  --panel: #111420;
+  --border: #1e2538;
+
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  background: #090b11;
+  overflow: hidden;
+}
+
+/* ====================================================================
+   PANGGUNG / STAGE 3D
+   #rov-3d    : kotak pembungkus, properti perspective() memberi efek
+                "kamera" sehingga objek di dalamnya terlihat berdimensi
+   .rov-scene : wadah dengan transform-style:preserve-3d, supaya semua
+                anak elemen di dalamnya tetap dihitung dalam ruang 3D
+   ==================================================================== */
+#rov-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0, 170, 255, 0.11), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.025), transparent 45%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+#diy-container .rov-scene {
+  position: relative;
+  width: min(78%, 420px);
+  aspect-ratio: 1.55;
+  transform-style: preserve-3d;
+}
+
+#diy-container .rov-shadow {
+  position: absolute;
+  left: 18%; right: 18%; bottom: 5%;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.36);
+  filter: blur(8px);
+}
+
+#diy-container .rov-grid-plane {
+  position: absolute;
+  inset: 12% 4% 6%;
+  transform: rotateX(72deg) translateZ(-72px);
+  transform-style: preserve-3d;
+  border: 1px solid rgba(30, 37, 56, 0.75);
+  background-image:
+    linear-gradient(rgba(30,37,56,0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,37,56,0.45) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.75;
+}
+
+/* ====================================================================
+   MODEL ROV (kerangka bentuknya)
+   .rov-model adalah elemen yang DIROTASI oleh JavaScript setiap frame.
+   Semua bagian fisik ROV adalah anak dari .rov-model sehingga ikut
+   berputar bersamaan, seolah satu objek solid.
+   ==================================================================== */
+#diy-container .rov-model {
+  position: absolute;
+  left: 50%; top: 46%;
+  width: 230px;
+  height: 138px;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  transition: transform 0.12s linear;
+}
+
+#diy-container .rov-body-3d {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 150px;
+  height: 72px;
+  transform: translate(-50%, -50%) translateZ(22px);
+  border: 1px solid rgba(0, 170, 255, 0.42);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #192235 0%, #0e1320 58%, #080b12 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 34px rgba(0,0,0,0.36);
+}
+
+#diy-container .rov-body-3d::before {
+  content: "";
+  position: absolute;
+  left: 10px; right: 10px; top: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(0,170,255,0.12), rgba(16,185,129,0.22));
+}
+
+#diy-container .rov-nose-3d {
+  position: absolute;
+  right: 21px; top: 50%;
+  width: 42px; height: 44px;
+  transform: translateY(-50%) translateZ(34px);
+  border-radius: 6px;
+  border: 1px solid rgba(0,170,255,0.45);
+  background: linear-gradient(135deg, #00aaff, #106c8f);
+}
+
+#diy-container .rov-camera-3d {
+  position: absolute;
+  right: 10px; top: 50%;
+  width: 24px; height: 24px;
+  transform: translateY(-50%) translateZ(42px);
+  border-radius: 50%;
+  border: 3px solid #0a0e17;
+  background: radial-gradient(circle at 42% 38%, #7dd3fc 0 16%, #08111f 18% 100%);
+  box-shadow: 0 0 16px rgba(0,170,255,0.34);
+}
+
+#diy-container .rov-frame-3d {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 208px; height: 110px;
+  transform: translate(-50%, -50%) translateZ(14px);
+  border: 4px solid #00aaff;
+  border-radius: 10px;
+  opacity: 0.82;
+}
+#diy-container .rov-frame-3d::before,
+#diy-container .rov-frame-3d::after {
+  content:"";
+  position:absolute;
+  top:-4px; bottom:-4px;
+  width:4px;
+  background:#00aaff;
+}
+#diy-container .rov-frame-3d::before { left: 38px; }
+#diy-container .rov-frame-3d::after { right: 38px; }
+
+#diy-container .rov-thruster-3d {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 5px solid #10b981;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16,185,129,0.32) 0 24%, #05070c 26% 100%);
+  box-shadow: inset 0 0 10px rgba(16,185,129,0.38), 0 10px 18px rgba(0,0,0,0.28);
+  transform: translateZ(38px);
+}
+#diy-container .rov-thruster-3d.t1 { left: 6px; top: 7px; }
+#diy-container .rov-thruster-3d.t2 { right: 6px; top: 7px; }
+#diy-container .rov-thruster-3d.t3 { left: 6px; bottom: 7px; }
+#diy-container .rov-thruster-3d.t4 { right: 6px; bottom: 7px; }
+#diy-container .rov-thruster-3d.t5 { left: 72px; bottom: -10px; transform: rotateX(68deg) translateZ(34px); }
+#diy-container .rov-thruster-3d.t6 { right: 72px; bottom: -10px; transform: rotateX(68deg) translateZ(34px); }
+
+#diy-container .rov-gripper-3d {
+  position: absolute;
+  right: -2px;
+  top: 82px;
+  width: 70px;
+  height: 42px;
+  transform: translateZ(36px);
+  transform-style: preserve-3d;
+}
+#diy-container .gripper-mount {
+  position: absolute;
+  left: 3px; top: 8px;
+  width: 24px; height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 170, 255, 0.45);
+  background: linear-gradient(135deg, #162033, #070b12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 14px rgba(0,0,0,0.24);
+}
+#diy-container .gripper-bar {
+  position: absolute;
+  left: 24px; top: 16px;
+  width: 24px; height: 5px;
+  border-radius: 999px;
+  background: #00aaff;
+  box-shadow: 0 0 8px rgba(0,170,255,0.35);
+}
+#diy-container .gripper-arm {
+  position: absolute;
+  left: 43px;
+  width: 28px; height: 5px;
+  border-radius: 999px;
+  background: #10b981;
+  transform-origin: left center;
+  box-shadow: 0 0 8px rgba(16,185,129,0.36);
+}
+#diy-container .gripper-arm.upper { top: 10px; transform: rotateZ(-28deg); }
+#diy-container .gripper-arm.lower { top: 24px; transform: rotateZ(28deg); }
+#diy-container .gripper-claw {
+  position: absolute;
+  right: -3px;
+  width: 18px; height: 5px;
+  border-radius: 999px;
+  background: #f59e0b;
+  transform-origin: left center;
+  box-shadow: 0 0 8px rgba(245,158,11,0.36);
+}
+#diy-container .gripper-claw.upper { top: 2px; transform: rotateZ(38deg); }
+#diy-container .gripper-claw.lower { top: 33px; transform: rotateZ(-38deg); }
+
+/* ====================================================================
+   INDIKATOR SUMBU X/Y/Z (kompas kecil di pojok)
+   ==================================================================== */
+#diy-container .axis-indicator {
+  position: absolute;
+  left: 12px; top: 12px;
+  width: 104px; height: 104px;
+  border: 1px solid rgba(100, 116, 139, 0.28);
+  border-radius: 8px;
+  background: rgba(3, 7, 18, 0.34);
+  pointer-events: none;
+}
+#diy-container .axis-svg { width: 100%; height: 100%; display: block; }
+#diy-container .axis-svg line { stroke-linecap: round; stroke-width: 4; filter: drop-shadow(0 0 4px currentColor); }
+#diy-container .axis-svg text {
+  font-family: monospace; font-size: 11px; font-weight: 800;
+  dominant-baseline: middle; text-anchor: middle;
+  paint-order: stroke; stroke: rgba(3, 7, 18, 0.72); stroke-width: 3px;
+}
+#diy-container #axis-x-line, #diy-container #axis-x-label { color: #f43f5e; stroke: #f43f5e; fill: #f43f5e; }
+#diy-container #axis-y-line, #diy-container #axis-y-label { color: #10b981; stroke: #10b981; fill: #10b981; }
+#diy-container #axis-z-line, #diy-container #axis-z-label { color: #00aaff; stroke: #00aaff; fill: #00aaff; }
+#diy-container .axis-origin-svg { fill: var(--text-main); stroke: var(--panel); stroke-width: 1.5; }
+
+#diy-container .rov-axis-label {
+  position: absolute; right: 12px; top: 12px;
+  font-family: monospace; font-size: 10px; color: var(--blue); opacity: 0.78;
+}
+
+#diy-container .imu-overlay {
+  position: absolute; left: 12px; bottom: 12px;
+  display: grid; grid-template-columns: repeat(3, auto); gap: 8px;
+  font-family: monospace; font-size: 10px; color: var(--text-muted);
+}
+#diy-container .imu-overlay span { color: var(--text-main); }

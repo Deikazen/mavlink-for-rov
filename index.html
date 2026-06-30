@@ -1,0 +1,54 @@
+<!-- Write your HTML code here -->
+<div id="diy-container">
+    <div id="rov-3d">
+        <div class="rov-scene">
+
+            <!-- lantai grid & bayangan, statis (tidak ikut berputar) -->
+            <div class="rov-grid-plane"></div>
+            <div class="rov-shadow"></div>
+
+            <!-- model utama: SEMUA bagian fisik ROV ada di sini -->
+            <div class="rov-model" id="rov-model">
+                <div class="rov-frame-3d"></div>
+                <div class="rov-body-3d"></div>
+                <div class="rov-nose-3d"></div>
+                <div class="rov-camera-3d"></div>
+                <div class="rov-thruster-3d t1"></div>
+                <div class="rov-thruster-3d t2"></div>
+                <div class="rov-thruster-3d t3"></div>
+                <div class="rov-thruster-3d t4"></div>
+                <div class="rov-thruster-3d t5"></div>
+                <div class="rov-thruster-3d t6"></div>
+                <div class="rov-gripper-3d">
+                    <div class="gripper-mount"></div>
+                    <div class="gripper-bar"></div>
+                    <div class="gripper-arm upper"></div>
+                    <div class="gripper-arm lower"></div>
+                    <div class="gripper-claw upper"></div>
+                    <div class="gripper-claw lower"></div>
+                </div>
+            </div>
+
+            <!-- kompas sumbu X (merah) Y (hijau) Z (biru) -->
+            <div class="axis-indicator">
+                <svg class="axis-svg" viewBox="0 0 104 104">
+                    <line id="axis-x-line" x1="52" y1="52" x2="86" y2="52"></line>
+                    <line id="axis-y-line" x1="52" y1="52" x2="52" y2="18"></line>
+                    <line id="axis-z-line" x1="52" y1="52" x2="28" y2="28"></line>
+                    <circle class="axis-origin-svg" cx="52" cy="52" r="4"></circle>
+                    <text id="axis-x-label" x="94" y="52">X</text>
+                    <text id="axis-y-label" x="52" y="10">Y</text>
+                    <text id="axis-z-label" x="20" y="20">Z</text>
+                </svg>
+            </div>
+            <div class="rov-axis-label">CSS 3D IMU LINK</div>
+        </div>
+
+        <!-- pembacaan angka roll/pitch/yaw -->
+        <div class="imu-overlay">
+            <div>ROLL <span id="imu-roll">+0.0°</span></div>
+            <div>PITCH <span id="imu-pitch">+0.0°</span></div>
+            <div>YAW <span id="imu-yaw">000.0°</span></div>
+        </div>
+    </div>
+</div>
