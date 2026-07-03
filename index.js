@@ -2,13 +2,26 @@ let simTime = 0;
 let imuRoll = 0, imuPitch = 0, imuYaw = 0;
 let bobX = 0, bobY = 0;
 
-// ====================================================================
-// INTEGRASI WEBSOCKET TELEMETRY (REAL DATA)
-// ====================================================================
 let target = { roll: 0, pitch: 0, yaw: 0, bobX: 0, bobY: 0 };
 
-// Sambungkan ke WebSocket Server Raspberry Pi
-const wsUrl = "ws://192.168.99.65:8082";
+// ====================================================================
+// CACHE DOM ELEMENTS (Meringankan proses render 60 FPS)
+// ====================================================================
+const elRoll = document.getElementById('imu-roll');
+const elPitch = document.getElementById('imu-pitch');
+const elYaw = document.getElementById('imu-yaw');
+const model = document.getElementById('rov-model');
+
+const axisElements = {
+    x: { line: document.getElementById('axis-x-line'), text: document.getElementById('axis-x-label') },
+    y: { line: document.getElementById('axis-y-line'), text: document.getElementById('axis-y-label') },
+    z: { line: document.getElementById('axis-z-line'), text: document.getElementById('axis-z-label') }
+};
+
+// ====================================================================
+// WEBSOCKET (REAL DATA) - Ganti dengan IP Jetson Nano
+// ====================================================================
+const wsUrl = "ws://192.168.99.17:8082";
 const ws = new WebSocket(wsUrl);
 
 ws.onopen = () => {
@@ -18,29 +31,24 @@ ws.onopen = () => {
 ws.onmessage = (event) => {
     try {
         const telemetry = JSON.parse(event.data);
-
-        // Update target utama berdasarkan data asli sensor Pixhawk
+        
         target.roll = telemetry.roll;
         target.pitch = telemetry.pitch;
         target.yaw = telemetry.yaw;
-
-        // Bobbing tipis-tipis berdasarkan kemiringan
-        target.bobX = (telemetry.roll * 0.3);
-        target.bobY = (telemetry.pitch * 0.3);
+        target.bobX = telemetry.roll * 0.3;
+        target.bobY = telemetry.pitch * 0.3;
 
     } catch (error) {
-        console.error("[WS ERROR] Gagal membaca payload JSON:", error);
+        console.error("[WS ERROR] Gagal parse JSON:", error);
     }
 };
 
-ws.onerror = (error) => {
-    console.error("[WS ERROR] Gangguan koneksi WebSocket:", error);
-};
+ws.onerror = (error) => console.error("[WS ERROR] Gangguan WebSocket:", error);
+ws.onclose = () => console.warn("[WS WARNING] WebSocket terputus.");
 
-ws.onclose = () => {
-    console.warn("[WS WARNING] Koneksi WebSocket terputus.");
-};
-
+// ====================================================================
+// MATEMATIKA PERHITUNGAN 3D
+// ====================================================================
 function signedDeg(value) {
     return (value >= 0 ? "+" : "") + value.toFixed(1) + "°";
 }
@@ -78,8 +86,8 @@ function updateAxisIndicator(yawDeg, pitchDeg, rollDeg) {
         const end = { x: origin.x + v.x * axisLength * depthScale, y: origin.y + v.y * axisLength * depthScale };
         const label = { x: origin.x + v.x * (axisLength + 10) * depthScale, y: origin.y + v.y * (axisLength + 10) * depthScale };
 
-        const line = document.getElementById(`axis-${axis.key}-line`);
-        const text = document.getElementById(`axis-${axis.key}-label`);
+        const { line, text } = axisElements[axis.key];
+        
         if (line) {
             line.setAttribute('x1', origin.x);
             line.setAttribute('y1', origin.y);
@@ -98,29 +106,28 @@ function shortestAngleDelta(from, to) {
     return ((to - from + 540) % 360) - 180;
 }
 
+// ====================================================================
+// UPDATE & RENDER LOOP
+// ====================================================================
 function updateImu() {
-    const rate = 0.1; // Responsif & Easing halus
+    const rate = 0.1; // Smooth interpolation
     imuRoll += (target.roll - imuRoll) * rate;
     imuPitch += (target.pitch - imuPitch) * rate;
     imuYaw = (imuYaw + shortestAngleDelta(imuYaw, target.yaw) * rate + 360) % 360;
     bobX += (target.bobX - bobX) * rate;
     bobY += (target.bobY - bobY) * rate;
 
-    // Update teks elemen HTML indikator
-    const elRoll = document.getElementById('imu-roll');
-    const elPitch = document.getElementById('imu-pitch');
-    const elYaw = document.getElementById('imu-yaw');
-
+    // Update Teks Layar
     if (elRoll) elRoll.textContent = signedDeg(imuRoll);
     if (elPitch) elPitch.textContent = signedDeg(imuPitch);
     if (elYaw) elYaw.textContent = imuYaw.toFixed(1).padStart(5, "0") + "°";
 
     const displayYaw = imuYaw - 90;
-    const attitudeTransform =
+    const attitudeTransform = 
         `translate(calc(-50% + ${bobX.toFixed(2)}px), calc(-50% + ${bobY.toFixed(2)}px)) ` +
         `rotateZ(${displayYaw.toFixed(2)}deg) rotateX(${imuPitch.toFixed(2)}deg) rotateY(${(-imuRoll).toFixed(2)}deg)`;
 
-    const model = document.getElementById('rov-model');
+    // Aplikasikan Transform ke Model
     if (model) {
         model.style.transform = attitudeTransform;
     }
@@ -136,4 +143,6 @@ function mainLoop(now) {
     updateImu();
     requestAnimationFrame(mainLoop);
 }
+
+// Mulai Loop Animasi
 requestAnimationFrame(mainLoop);
