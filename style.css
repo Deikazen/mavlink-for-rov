@@ -1,4 +1,3 @@
-/* Write your CSS code here */
 #diy-container {
   --blue: #00aaff;
   --green: #10b981;
@@ -22,13 +21,6 @@
   overflow: hidden;
 }
 
-/* ====================================================================
-   PANGGUNG / STAGE 3D
-   #rov-3d    : kotak pembungkus, properti perspective() memberi efek
-                "kamera" sehingga objek di dalamnya terlihat berdimensi
-   .rov-scene : wadah dengan transform-style:preserve-3d, supaya semua
-                anak elemen di dalamnya tetap dihitung dalam ruang 3D
-   ==================================================================== */
 #rov-3d {
   position: relative;
   width: 100%;
@@ -73,12 +65,6 @@
   opacity: 0.75;
 }
 
-/* ====================================================================
-   MODEL ROV (kerangka bentuknya)
-   .rov-model adalah elemen yang DIROTASI oleh JavaScript setiap frame.
-   Semua bagian fisik ROV adalah anak dari .rov-model sehingga ikut
-   berputar bersamaan, seolah satu objek solid.
-   ==================================================================== */
 #diy-container .rov-model {
   position: absolute;
   left: 50%; top: 46%;
@@ -86,7 +72,7 @@
   height: 138px;
   transform-style: preserve-3d;
   transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
-  transition: transform 0.12s linear;
+  /* Baris transition dihapus agar tidak bentrok dengan JS (Fix lag/freeze) */
 }
 
 #diy-container .rov-body-3d {
@@ -217,9 +203,6 @@
 #diy-container .gripper-claw.upper { top: 2px; transform: rotateZ(38deg); }
 #diy-container .gripper-claw.lower { top: 33px; transform: rotateZ(-38deg); }
 
-/* ====================================================================
-   INDIKATOR SUMBU X/Y/Z (kompas kecil di pojok)
-   ==================================================================== */
 #diy-container .axis-indicator {
   position: absolute;
   left: 12px; top: 12px;
