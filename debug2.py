@@ -5,7 +5,7 @@ import math
 from pymavlink import mavutil
 
 try:
-    pixhawk_link = mavutil.mavlink_connection('udpout:127.0.0.1:14660')
+    pixhawk_link = mavutil.mavlink_connection('udpout:127.0.0.1:14770')
     print("[SUCCESS] Berhasil terhubung ke MAVLink via UDP (Mode Client/Udpout).")
     print("[INFO] Mengirim sapaan Heartbeat & Request Stream ke Pixhawk...")
     pixhawk_link.mav.heartbeat_send(
@@ -27,36 +27,45 @@ except Exception as e:
 
 connected_clients = set()
 
-async def handler(websocket):
+async def handler(websocket, path):
     connected_clients.add(websocket)
     print(f"[WS CLIENT] Client baru terhubung dari: {websocket.remote_address}")
     try:
         await websocket.wait_closed()
     finally:
-        connected_clients.remove(websocket)
+        if websocket in connected_clients:
+            connected_clients.remove(websocket)
         print(f"[WS CLIENT] Client {websocket.remote_address} terputus.")
 
 async def read_pixhawk_telemetry():
-    print("\n[INFO] Mulai mendengarkan data ATTITUDE dari Pixhawk...")
+    print("\n[INFO] Mulai mendengarkan data ATTITUDE (Optimized untuk Jetson Nano)...")
     last_print_time = 0
     while True:
         try:
-            msg = pixhawk_link.recv_match(type='ATTITUDE', blocking=False)
+            # REAL-TIME & AMAN: Menunggu data masuk dengan timeout 1ms.
+            # Jika tidak ada data, CPU langsung dilepas untuk service BlueOS lainnya.
+            msg = pixhawk_link.recv_match(type='ATTITUDE', blocking=True, timeout=0.001)
             if msg:
                 roll_deg = math.degrees(msg.roll)
                 pitch_deg = math.degrees(msg.pitch)
                 yaw_deg = (math.degrees(msg.yaw) + 360) % 360
+
+                # Print ke terminal dibatasi setiap 0.5 detik agar tidak spam,
+                # namun pengiriman data ke WebSocket (3D View) tetap berjalan instan/real-time.
                 current_time = asyncio.get_event_loop().time()
                 if current_time - last_print_time >= 0.5:
                     print(f"[RAW MAVLINK] Roll: {roll_deg:.2f}° | Pitch: {pitch_deg:.2f}° | Yaw: {yaw_deg:.2f}°")
                     last_print_time = current_time
+
                 telemetry_data = {"roll": roll_deg, "pitch": pitch_deg, "yaw": yaw_deg}
                 if connected_clients:
                     payload = json.dumps(telemetry_data)
                     await asyncio.gather(*[client.send(payload) for client in connected_clients], return_exceptions=True)
         except Exception as e:
             print(f"[WARNING] Gangguan pembacaan data: {e}")
-        await asyncio.sleep(0.01)
+
+        # Jeda napas super tipis untuk menghandle handshake koneksi websocket baru
+        await asyncio.sleep(0.001)
 
 async def main():
     async with websockets.serve(handler, "0.0.0.0", 8082):
@@ -66,6 +75,8 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        asyncio.run(main())
+        # Perbaikan Option B: Event loop manual pengganti asyncio.run() untuk Python lama
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         print("\n[STOP] Telemetry Bridge dimatikan oleh user.")
