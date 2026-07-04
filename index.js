@@ -5,6 +5,13 @@ let bobX = 0, bobY = 0;
 let target = { roll: 0, pitch: 0, yaw: 0, bobX: 0, bobY: 0 };
 
 // ====================================================================
+// KALIBRASI OFFSET (Data Posisi Datar Pixhawk)
+// ====================================================================
+const OFFSET_ROLL = 0.46; 
+const OFFSET_PITCH = -2.59;
+const OFFSET_YAW = 319.57; 
+
+// ====================================================================
 // CACHE DOM ELEMENTS (Meringankan proses render 60 FPS)
 // ====================================================================
 const elRoll = document.getElementById('imu-roll');
@@ -19,9 +26,10 @@ const axisElements = {
 };
 
 // ====================================================================
-// WEBSOCKET (REAL DATA) - Ganti dengan IP Jetson Nano
+// WEBSOCKET (REAL DATA)
 // ====================================================================
-const wsUrl = "ws://192.168.99.17:8082";
+const currentHost = window.location.hostname || "192.168.99.17"; 
+const wsUrl = `ws://${currentHost}:8082`;
 const ws = new WebSocket(wsUrl);
 
 ws.onopen = () => {
@@ -107,32 +115,46 @@ function shortestAngleDelta(from, to) {
 }
 
 // ====================================================================
-// UPDATE & RENDER LOOP
+// UPDATE & RENDER LOOP DENGAN KALIBRASI & SWAP AXIS
 // ====================================================================
 function updateImu() {
     const rate = 0.1; // Smooth interpolation
+    
+    // Perhitungan asli untuk transisi mulus
     imuRoll += (target.roll - imuRoll) * rate;
     imuPitch += (target.pitch - imuPitch) * rate;
     imuYaw = (imuYaw + shortestAngleDelta(imuYaw, target.yaw) * rate + 360) % 360;
     bobX += (target.bobX - bobX) * rate;
     bobY += (target.bobY - bobY) * rate;
 
-    // Update Teks Layar
-    if (elRoll) elRoll.textContent = signedDeg(imuRoll);
-    if (elPitch) elPitch.textContent = signedDeg(imuPitch);
-    if (elYaw) elYaw.textContent = imuYaw.toFixed(1).padStart(5, "0") + "°";
+    // --- TERAPKAN KALIBRASI OFFSET ---
+    let finalRoll = imuRoll - OFFSET_ROLL;
+    let finalPitch = imuPitch - OFFSET_PITCH;
+    let finalYaw = shortestAngleDelta(OFFSET_YAW, imuYaw); 
 
-    const displayYaw = imuYaw - 90;
+    // Update Teks Layar
+    if (elRoll) elRoll.textContent = signedDeg(finalRoll);
+    if (elPitch) elPitch.textContent = signedDeg(finalPitch);
+    if (elYaw) elYaw.textContent = imuYaw.toFixed(1).padStart(5, "0") + "°"; 
+
+    // Kalkulasi perputaran layar CSS (-90 untuk meluruskan moncong)
+    const displayYaw = finalYaw - 90; 
+    
+    // --- TRANSFORM MODEL 3D DENGAN SWAP AXIS ---
+    // Sumbu RotateX diisi oleh finalRoll
+    // Sumbu RotateY diisi oleh finalPitch
+    // Jika pergerakannya TERBALIK ARAHNYA, cukup tambahkan minus (contoh: -finalRoll.toFixed(2))
     const attitudeTransform = 
         `translate(calc(-50% + ${bobX.toFixed(2)}px), calc(-50% + ${bobY.toFixed(2)}px)) ` +
-        `rotateZ(${displayYaw.toFixed(2)}deg) rotateX(${imuPitch.toFixed(2)}deg) rotateY(${(-imuRoll).toFixed(2)}deg)`;
+        `rotateZ(${displayYaw.toFixed(2)}deg) rotateX(${finalRoll.toFixed(2)}deg) rotateY(${finalPitch.toFixed(2)}deg)`;
 
     // Aplikasikan Transform ke Model
     if (model) {
         model.style.transform = attitudeTransform;
     }
 
-    updateAxisIndicator(displayYaw, imuPitch, imuRoll);
+    // Update animasi Kompas Indikator
+    updateAxisIndicator(displayYaw, finalPitch, finalRoll);
 }
 
 let lastTime = performance.now();
